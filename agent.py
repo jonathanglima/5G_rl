@@ -3,9 +3,13 @@ import pandas as pd
 import time
 import random
 
+from collections import deque
+from io import StringIO
+
 from gym import spaces
 
 INITIAL_WEIGHT = 180000
+INITIAL_LINES_READING = 100000
 
 DF_HEADERS = [
     'subchannel',
@@ -34,6 +38,8 @@ class Env5gAirSim(gym.Env):
         self.dataset_5f_filename = dataset_5g_filename
         self.communication_5g_filename = communication_5g_filename
         self.debug = debug
+        self.line_amount = INITIAL_LINES_READING
+        self.line_amount_created_from_stats = False
 
         self.action_space = None  # TBD
         self.observation_space = None  # TBD
@@ -48,7 +54,10 @@ class Env5gAirSim(gym.Env):
         self._read_csv()
 
     def _read_csv(self, sep=';', header=None):
-        self.df = pd.read_csv(self.dataset_5f_filename,
+        with open(self.dataset_5f_filename, 'r') as f:
+            q = deque(f, self.line_amount)
+
+        self.df = pd.read_csv(StringIO(''.join(q)),
                                 sep=sep,
                                 header=header,
                                 names=DF_HEADERS
@@ -57,6 +66,10 @@ class Env5gAirSim(gym.Env):
         self.max_allocation_counter = self.df['allocation_counter'].max()
 
         self.step_rows = self.df['allocation_counter'] == self.max_allocation_counter - 1
+
+        if not self.line_amount_created_from_stats:
+            self.line_amount_created_from_stats = True
+            self.line_amount = len(self.df) * 5
 
     def _take_action(self, action):
         self.current_allocation_counter = self.max_allocation_counter - 1
@@ -84,7 +97,7 @@ class Env5gAirSim(gym.Env):
                 if self.debug:
                     print('Sleeping')
 
-                time.sleep(0.01)
+                time.sleep(0.005)
 
         self._take_action(action)
 
