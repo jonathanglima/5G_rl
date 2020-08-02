@@ -12,9 +12,7 @@ parser.add_argument("-w", "--write", dest="write", required=True,
 args = parser.parse_args()
 curr_allocation_counter = -1
 
-open(args.write, 'w').close()
-
-with open(args.write, "a") as text_file:
+with open(args.write, "w") as text_file:
     # print(f"Purchase Amount: {TotalAmount}", file=text_file)
     print(f"0,1800000", file=text_file)
     print(f"1,1800000", file=text_file)
