@@ -96,7 +96,7 @@ class Env5gAirSim(gym.Env):
             self.line_amount = len(self.df) * 5
 
     def _take_action(self, action):
-        self.current_allocation_counter = self.max_allocation_counter - 1
+        self.current_allocation_counter = self.max_allocation_counter
 
         if self.debug:
             print('Writing')
@@ -110,6 +110,8 @@ class Env5gAirSim(gym.Env):
     def step(self, action):
         we_should_write = False
 
+        action = np.nan_to_num(action)
+
         while not we_should_write:
             self._read_csv()
 
@@ -122,7 +124,7 @@ class Env5gAirSim(gym.Env):
                 time.sleep(0.005)
 
         self.current_step += 1
-        self._take_action(action)
+        self._take_action(action[0])
 
         done = False
         reward = random.uniform(0, 100)  # symbolic, while we don't receive rewards
