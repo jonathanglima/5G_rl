@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 import pandas as pd
 import time
 import random
@@ -31,6 +32,22 @@ DF_HEADERS = [
     'metric',
 ]
 
+DF_NON_SEQUENTIAL_COLS = [
+    'applicationType',
+    'HeadOfLinePacketDelay',
+    'HeadOfLinePacketDelayIsNull',
+    'targetDelay',
+    'targetDelayIsNull',
+    'avgHeadOfLineDelay',
+    'spectralEfficiency',
+    'avgTransmissionRate',
+    'numerator',
+    'numeratorIsNull',
+    'denominator',
+    'denominatorIsNull',
+    'weightIsNull',
+]
+
 class Env5gAirSim(gym.Env):
     def __init__(self, dataset_5g_filename, communication_5g_filename, debug=False):
         super(Env5gAirSim, self).__init__()
@@ -40,9 +57,16 @@ class Env5gAirSim(gym.Env):
         self.debug = debug
         self.line_amount = INITIAL_LINES_READING
         self.line_amount_created_from_stats = False
+        self.current_step = 0
 
-        self.action_space = None  # TBD
-        self.observation_space = None  # TBD
+        self.action_space = spaces.Box(
+            low=0.00001, high=10000000, shape=(1,), dtype=np.float32
+        )
+        self.observation_space = spaces.Box(
+            low=np.array([0, 0, 0, 0, 0, 0, 0.0000001, 0.008, 0, 0, 0, 0, 0]),
+            high=np.array([3, 0.1, 1, 0.1, 1, 0.1, 0.1, 1000000, 6, 1, 1.5, 1, 1]),
+            dtype=np.float32
+        )
         self.current_allocation_counter = -1
 
         action = INITIAL_WEIGHT
@@ -81,9 +105,7 @@ class Env5gAirSim(gym.Env):
             print(f"{self.current_allocation_counter+1},{action}", file=text_file)
 
     def _next_observation(self):
-        obs = None
-        
-        return obs
+        return self.df.loc[self.step_rows, DF_NON_SEQUENTIAL_COLS].mean()
 
     def step(self, action):
         we_should_write = False
@@ -99,9 +121,9 @@ class Env5gAirSim(gym.Env):
 
                 time.sleep(0.005)
 
+        self.current_step += 1
         self._take_action(action)
 
-        # self.current_step += 1
         done = False
         reward = random.uniform(0, 100)  # symbolic, while we don't receive rewards
         obs = self._next_observation()
@@ -112,4 +134,4 @@ class Env5gAirSim(gym.Env):
         return self._next_observation()
 
     def render(self, mode='human', close=False):
-        pass
+        print(f'Step: {self.current_step}')
