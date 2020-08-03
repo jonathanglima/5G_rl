@@ -91,7 +91,7 @@ class Env5gAirSim(gym.Env):
 
         self.step_rows = self.df['allocation_counter'] == self.max_allocation_counter - 1
 
-        if not self.line_amount_created_from_stats:
+        if not self.line_amount_created_from_stats and len(self.df) > 0:
             self.line_amount_created_from_stats = True
             self.line_amount = len(self.df) * 5
 
